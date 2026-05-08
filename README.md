@@ -1,61 +1,67 @@
-# Autotag PDFix
+# Autotag (PDFix)
 
-A Docker image that automatically tags a PDF file using layout template PDFix JSON using correct PDFix SDK version.
+A Docker image that automatically tags a PDF using a PDFix layout template JSON and the matching PDFix SDK version.
 
 ## Table of Contents
 
-- [Autotag PDFix](#autotag-pdfix)
-  - [Table of Contents](#table-of-contents)
-  - [Getting Started](#getting-started)
-  - [Run a Docker Container ](#run-docker-container)
-  - [Export Configuration for Integration](#export-configuration-for-integration)
-  - [License](#license)
-  - [Help \& Support](#help--support)
+- [Autotag (PDFix)](#autotag-pdfix)
+  - [Getting started](#getting-started)
+  - [Usage](#usage)
+  - [Commands](#commands)
+  - [Arguments](#arguments)
+  - [Examples](#examples)
+  - [Notes](#notes)
+  - [Help \& support](#help--support)
+  - [Licenses](#licenses)
 
-## Getting Started
+## Getting started
 
-To use this Docker application, you'll need to have Docker installed on your system. If Docker is not installed, please follow the instructions on the [official Docker website](https://docs.docker.com/get-docker/) to install it.
+You need Docker installed. The first run downloads the image and may take longer than later runs.
 
-## Run a Docker Container
+## Usage
 
-The first run will pull the docker image, which may take some time. Make your own image for more advanced use.  
-To run docker container as CLI you should share the folder with PDF to process using `-v` parameter. In this example it's current folder.
-
-```bash
-docker run -v $(pwd):/data -w /data --rm pdfix/autotag-pdfix:latest tag --name ${LICENSE_NAME} --key ${LICENSE_KEY} -i /data/input.pdf -t /data/template.json -o /data/output.pdf
-```
-
-This action assumes user have `template.json` with older SDK version and needs PDFix SDK of that version to autotag PDF. For this provide `template.json` with input document to action.
-
-These arguments are for an account-based PDFix license.
+Mount a folder into the container and run a subcommand:
 
 ```bash
---name ${LICENSE_NAME} --key ${LICENSE_KEY}
+docker run --rm -v "$(pwd)":/data -w /data pdfix/autotag-pdfix:latest <command> [options]
 ```
 
-Contact support for more information.
+## Commands
 
-For more detailed information about the available command-line arguments, you can run the following command:
+- `tag`: Tag a PDF using a PDFix layout template JSON
+
+## Arguments
+
+### `tag`
+
+| Option | Required | Type / expected value | Description |
+|---|:---:|---|---|
+| `--input`, `-i` | yes | Path to an existing `.pdf` file | Input PDF |
+| `--output`, `-o` | yes | Path for the output `.pdf` file | Output PDF |
+| `--template`, `-t` | yes | Path to an existing `.json` layout template file | PDFix layout template JSON |
+| `--name` | no | String (PDFix account license name) | PDFix license name |
+| `--key` | no | String (PDFix account license key) | PDFix license key |
+
+## Examples
+
+Tag `input.pdf` using `template.json`:
 
 ```bash
-docker run --rm pdfix/autotag-pdfix:latest --help
+docker run --rm -v "$(pwd)":/data -w /data pdfix/autotag-pdfix:latest \
+  tag --name "${LICENSE_NAME}" --key "${LICENSE_KEY}" \
+  -i /data/input.pdf -t /data/template.json -o /data/output.pdf
 ```
 
-## Export Configuration for Integration
+## Notes
 
-To export the configuration JSON file, use the following command:
+- The template JSON may require a specific PDFix SDK version; the image selects a compatible SDK automatically.
 
-```bash
-docker run -v $(pwd):/data -w /data --rm pdfix/autotag-pdfix:latest config -o config.json
-```
+## Help & support
 
-## License
+For PDFix SDK licensing or issues, contact `support@pdfix.net`.
 
-- [PDFix license](https://pdfix.net/terms)
+## Licenses
 
-The trial version of the PDFix SDK may apply a watermark on the page and redact random parts of the PDF including the scanned image in the background. Contact us to get an evaluation or production license.
+- [PDFix Terms](https://pdfix.net/terms)
 
-## Help & Support
-
-To obtain a PDFix SDK license or report an issue please contact us at support@pdfix.net.
-For more information visit https://pdfix.net
+Trial versions of the PDFix SDK may apply watermarks and redact random content in the output PDF.
