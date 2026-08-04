@@ -33,6 +33,7 @@
                     "value": ""
                 },
                 {
+                    "title": "Template JSON",
                     "name": "template_json",
                     "desc": "PDFix layout template JSON file",
                     "type": "file_path",
