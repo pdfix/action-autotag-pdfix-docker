@@ -1,12 +1,12 @@
-EC_ARG_GENERAL = 10
-EC_ARG_TEMPLATE_JSON = 11
-EC_ARG_INPUT_PDF_OUTPUT_PDF = 12
+EC_ARG_GENERAL: int = 10
+EC_ARG_TEMPLATE_JSON: int = 11
+EC_ARG_INPUT_PDF_OUTPUT_PDF: int = 12
 
-EC_PDFIX_ERROR = 20
+EC_PDFIX_ERROR: int = 20
 
-MESSAGE_ARG_GENERAL = "Failed to parse arguments. Please check the usage and try again."
-MESSAGE_ARG_TEMPLATE_JSON = "PDFix layout template was not provided."
-MESSAGE_ARG_INPUT_PDF_OUTPUT_PDF = "Input and output file must be PDF documents."
+MESSAGE_ARG_GENERAL: str = "Failed to parse arguments. Please check the usage and try again."
+MESSAGE_ARG_TEMPLATE_JSON: str = "PDFix layout template was not provided."
+MESSAGE_ARG_INPUT_PDF_OUTPUT_PDF: str = "Input and output file must be PDF documents."
 
 
 class ExpectedException(BaseException):

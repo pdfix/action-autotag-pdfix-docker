@@ -14,8 +14,6 @@ RUN case "$TARGETARCH" in \
         *) echo "Unsupported arch" && exit 1 ;; \
     esac
 
-
-
 # Final image
 FROM python:3.13-slim
 
@@ -29,14 +27,12 @@ RUN apt-get update && \
 
 WORKDIR /usr/autotag/
 
-
 # Create a virtual environment and install dependencies
 ENV VIRTUAL_ENV=venv
 RUN python3 -m venv venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 COPY requirements.txt /usr/autotag/
 RUN pip install --no-cache-dir -r requirements.txt && rm -rf /root/.cache/pip
-
 
 # Copy config.json and the source code
 COPY config.json /usr/autotag/
@@ -45,8 +41,7 @@ COPY src /usr/autotag/src
 # Only the selected files make it into the final image
 COPY --from=sdk-select /selected /usr/autotag/sdk
 
-
+# License
 LABEL license="https://pdfix.net/terms (PDFix SDK)"
-
 
 ENTRYPOINT ["/usr/autotag/venv/bin/python3", "/usr/autotag/src/main.py"]

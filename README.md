@@ -65,3 +65,4 @@ For PDFix SDK licensing or issues, contact `support@pdfix.net`.
 - [PDFix Terms](https://pdfix.net/terms)
 
 Trial versions of the PDFix SDK may apply watermarks and redact random content in the output PDF.
+
