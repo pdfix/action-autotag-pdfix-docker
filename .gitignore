@@ -29,5 +29,5 @@ sdk*
 # Ignore files in
 data
 
-# Test related ignores
-tests/venv
+# Local development tests
+tests/
