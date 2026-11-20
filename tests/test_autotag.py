@@ -9,6 +9,7 @@ sys.path.insert(0, Path(__file__).resolve().parent.parent.joinpath("src").as_pos
 
 import main  # noqa: E402
 from autotag import Autotag  # noqa: E402
+from constants import LATEST_SDK_VERSION  # noqa: E402
 from exceptions import (  # noqa: E402
     EC_ARG_TEMPLATE_FILE_NOT_EXISTS,
     EC_PDFIX_ERROR,
@@ -91,6 +92,30 @@ class TestAutotagRun(unittest.TestCase):
         run.return_value = finished_process(0)
         self.run_autotag()
         run.assert_called_once()
+
+
+class TestSdkVersion(unittest.TestCase):
+    def setUp(self) -> None:
+        temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary_directory.cleanup)
+        self.template_path: Path = Path(temporary_directory.name).joinpath("template.json")
+
+    def sdk_version(self, template: str) -> str:
+        self.template_path.write_text(template, encoding="utf-8")
+        autotag = Autotag("", "", "input.pdf", "output.pdf", self.template_path.as_posix())
+        return autotag._get_sdk_version()
+
+    def test_unknown_version_logs_and_uses_latest(self) -> None:
+        with self.assertLogs("autotag", level="INFO") as logs:
+            version: str = self.sdk_version('{"metadata": {"sdk_version": "0.0.1"}}')
+        self.assertEqual(version, LATEST_SDK_VERSION)
+        self.assertIn(
+            f"Unknown SDK version 0.0.1 in template file. Using latest version {LATEST_SDK_VERSION}.",
+            "\n".join(logs.output),
+        )
+
+    def test_missing_version_uses_latest(self) -> None:
+        self.assertEqual(self.sdk_version("{}"), LATEST_SDK_VERSION)
 
 
 if __name__ == "__main__":

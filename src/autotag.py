@@ -119,11 +119,15 @@ class Autotag:
                     logger.debug("Verified existence of SDK folder in docker image.")
                     return version
 
-                version = f"v{version}"
+                prefixed_version: str = f"v{version}"
 
-                teoretical_path_to_sdk_folder = Path(__file__).parent.parent.joinpath("sdk", version)
+                teoretical_path_to_sdk_folder = Path(__file__).parent.parent.joinpath("sdk", prefixed_version)
                 if teoretical_path_to_sdk_folder.exists():
                     logger.debug("Verified existence of SDK folder in docker image.")
-                    return version
+                    return prefixed_version
+
+                logger.info(
+                    f"Unknown SDK version {version} in template file. Using latest version {LATEST_SDK_VERSION}."
+                )
 
         return LATEST_SDK_VERSION
