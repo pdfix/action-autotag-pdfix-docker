@@ -46,7 +46,7 @@
                 "11": "PDFix layout template was not provided.",
                 "12": "Input and output file must be PDF documents.",
                 "13": "PDFix layout template file does not exist.",
-                "20": "Some PDFix SDK error occurred."
+                "20": "PDFix SDK failed to tag the document. See the log for more details."
             },
             "progress_regex": "^(?<text>[^:]+):\\s+(?<progress>\\d{1,3})%"
         }

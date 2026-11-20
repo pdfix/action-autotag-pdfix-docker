@@ -10,6 +10,8 @@ MESSAGE_ARG_TEMPLATE_JSON: str = "PDFix layout template was not provided."
 MESSAGE_ARG_INPUT_PDF_OUTPUT_PDF: str = "Input and output file must be PDF documents."
 MESSAGE_ARG_TEMPLATE_FILE_NOT_EXISTS: str = "PDFix layout template file does not exist."
 
+MESSAGE_PDFIX_ERROR: str = "PDFix SDK failed to tag the document. See the log for more details."
+
 
 class ExpectedException(BaseException):
     def __init__(self, error_code: int) -> None:
@@ -42,6 +44,6 @@ class ArgumentTemplateFileNotExistsException(ArgumentException):
 
 
 class PdfixException(ExpectedException):
-    def __init__(self, error_code: int, message: str = "") -> None:
+    def __init__(self) -> None:
         super().__init__(EC_PDFIX_ERROR)
-        self._add_note(f"[{error_code}] {message}")
+        self._add_note(MESSAGE_PDFIX_ERROR)

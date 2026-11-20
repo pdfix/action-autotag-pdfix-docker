@@ -89,7 +89,9 @@ class Autotag:
         logger.debug(f"Return code: {result.returncode}\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
 
         if result.returncode != 0:
-            raise PdfixException(result.returncode, result.stderr)
+            # PDFix SDK prints its error message to stdout
+            logger.error(f"PDFix SDK failed with return code {result.returncode}:\n{result.stdout}{result.stderr}")
+            raise PdfixException()
 
     def _get_sdk_version(self) -> str:
         """
