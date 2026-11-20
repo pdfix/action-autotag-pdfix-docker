@@ -78,6 +78,15 @@ def run_autotag_subcommand(args) -> None:
     autotagging_pdf(args.name, args.key, args.input, args.output, args.template)
 
 
+# @KA:action pdfix_autotag_pdfix
+# @KA:desc Automatically tags the whole PDF with a PDFix layout template, using the same PDFix SDK
+# version the template was created for. Existing tags are removed and the document gets a new
+# structure tree; the input file is not changed, the tagged PDF is saved as the output file.
+# @KA:context Run on the **whole document** when a PDF is untagged or its tags should be replaced,
+# and you have a layout template for this kind of document (made in the PDFix Desktop template
+# editor or by an AI layout action). Use it when results must match the template exactly as it was
+# tuned, even if your PDFix Desktop is newer. Runs locally in Docker; the first run downloads the
+# image and takes longer.
 def autotagging_pdf(
     license_name: Optional[str],
     license_key: Optional[str],
@@ -95,6 +104,16 @@ def autotagging_pdf(
         output_path (str): Path to PDF document.
         template_path (str): Path to template JSON file.
     """
+    # @KA:param template_json
+    # @KA:desc PDFix layout template (`.json`) that drives the tagging: what is a heading, paragraph,
+    # table, list or artifact. Required, the file must exist. The template remembers the PDFix SDK
+    # version it was made with, and the action uses that version (see **SDK version from the
+    # template**).
+    # @KA:problem "PDFix layout template was not provided." (error 11)
+    # @KA:solution Select a template file with the `.json` extension in the **Template JSON** field.
+    # @KA:problem "PDFix layout template file does not exist." (error 13)
+    # @KA:solution The selected template file was not found. The message shows the path the action
+    # looked for; select an existing template file.
     if not template_path.lower().endswith(".json"):
         raise ArgumentTemplateJsonException()
 
@@ -102,6 +121,15 @@ def autotagging_pdf(
     if not template_file_path.is_file():
         raise ArgumentTemplateFileNotExistsException(template_file_path.as_posix())
 
+    # @KA:param input_pdf
+    # @KA:desc PDF document to tag. It is only read, never changed. Password-protected PDFs are not
+    # supported. Scanned pages without real text get no text tags; run an OCR action first.
+    # @KA:problem "Input and output file must be PDF documents." (error 12)
+    # @KA:solution Use files with the `.pdf` extension for both input and output.
+    #
+    # @KA:param output_pdf
+    # @KA:desc Where the tagged PDF is saved. The folder must already exist; an existing file with
+    # the same name is overwritten.
     if input_path.lower().endswith(".pdf") and output_path.lower().endswith(".pdf"):
         autotag = Autotag(
             license_name,

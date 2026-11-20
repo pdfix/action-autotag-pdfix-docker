@@ -55,7 +55,13 @@ class Autotag:
 
             command: list[str] = [sdk_executable.as_posix()]
 
-            # PDFix license name
+            # @KA:action pdfix_autotag_pdfix
+            # @KA:logic PDFix license
+            # @KA:desc PDFix Desktop passes your PDFix license to the action automatically. Without a
+            # license the action runs in trial mode.
+            # @KA:problem The output PDF has watermarks or randomly redacted content.
+            # @KA:solution Trial mode is active. Activate your PDFix license in PDFix Desktop and run
+            # the action again.
             if self.license_name:
                 command.append("--email")
                 command.append(self.license_name)
@@ -65,7 +71,17 @@ class Autotag:
                 command.append("--key")
                 command.append(self.license_key)
 
-            # Subcommand for autotagging
+            # @KA:logic Existing tags are replaced
+            # @KA:desc The whole document is tagged from scratch: the old structure tree and all old
+            # tags and artifact marks on the pages are removed first, nothing of them is kept. The new
+            # tree has one `Document` root, heading levels are kept in sequence (H1, H2, ...), and
+            # content that is not real content (headers, footers, decorations, as the template
+            # defines) is marked as artifact. Content inside Form XObjects is tagged too.
+            #
+            # @KA:logic What is not done
+            # @KA:desc The action only creates tags. It does not run OCR, add alternate text, set the
+            # document title or language, or fix metadata, and it does not validate the result. Run
+            # the matching actions afterwards and check the result with a PDF/UA validation.
             command.append("add-tags")
 
             # Input
@@ -94,6 +110,20 @@ class Autotag:
 
             logger.debug(f"Return code: {result.returncode}\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
 
+            # @KA:logic Tagging failed
+            # @KA:desc When PDFix SDK cannot open, tag or save the document, the action stops with
+            # error 20 "PDFix SDK failed to tag the document." and no output PDF is created. The log
+            # line above it, "PDFix SDK failed with return code ...", shows the code and the SDK
+            # message.
+            # @KA:problem Error 20 and the log shows return code 5.
+            # @KA:solution The input PDF does not exist or the output folder does not exist. Check
+            # both paths.
+            # @KA:problem Error 20 and the log shows return code 31 ("Failed to open the document").
+            # @KA:solution The input file is not a valid PDF. Open and save it again in a PDF editor
+            # and run the action again.
+            # @KA:problem Error 20 and the log shows return code 34.
+            # @KA:solution The input PDF is password-protected. Remove the password and run the
+            # action again.
             if result.returncode != 0:
                 # PDFix SDK prints its error message to stdout
                 logger.error(f"PDFix SDK failed with return code {result.returncode}:\n{result.stdout}{result.stderr}")
@@ -112,6 +142,19 @@ class Autotag:
         """
         template_path: Path = Path(self.template_path_str)
 
+        # @KA:logic SDK version from the template
+        # @KA:desc The action contains the released PDFix SDK versions and tags the document with the
+        # version written in the template (`sdk_version` in the template metadata). The same template
+        # with the same SDK version gives the same tags as when the template was tuned, independent
+        # of the PDFix Desktop version you use. If the template has no SDK version, or the version
+        # is not available in the action, the newest SDK version in the action is used.
+        # @KA:problem Tagging differs from what the template produced when it was created.
+        # @KA:solution Look in the action log. "Unknown SDK version ... Using latest version ..."
+        # means the template's SDK version is not available in the action and a newer one was used.
+        # Update the action or recreate the template with a current PDFix version.
+        # @KA:problem "PDFix layout template is not a valid JSON file." (error 21)
+        # @KA:solution The template file is damaged or is not a layout template. The log shows where
+        # reading failed. Export the template again or select another template file.
         if template_path.exists():
             logger.debug("Searching for SDK version in template file.")
             with open(template_path, "r", encoding="utf-8") as file:
