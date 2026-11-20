@@ -13,6 +13,7 @@ from constants import LATEST_SDK_VERSION  # noqa: E402
 from exceptions import (  # noqa: E402
     EC_ARG_TEMPLATE_FILE_NOT_EXISTS,
     EC_PDFIX_ERROR,
+    EC_TEMPLATE_JSON_INVALID,
     MESSAGE_PDFIX_ERROR,
     ExpectedException,
 )
@@ -113,6 +114,12 @@ class TestSdkVersion(unittest.TestCase):
             f"Unknown SDK version 0.0.1 in template file. Using latest version {LATEST_SDK_VERSION}.",
             "\n".join(logs.output),
         )
+
+    def test_invalid_json_is_reported(self) -> None:
+        for template in ("{bad", "[]"):
+            with self.assertRaises(ExpectedException) as context:
+                self.sdk_version(template)
+            self.assertEqual(context.exception.error_code, EC_TEMPLATE_JSON_INVALID)
 
     def test_missing_version_uses_latest(self) -> None:
         self.assertEqual(self.sdk_version("{}"), LATEST_SDK_VERSION)

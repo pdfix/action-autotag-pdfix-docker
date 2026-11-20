@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from constants import LATEST_SDK_VERSION
-from exceptions import PdfixException
+from exceptions import PdfixException, TemplateJsonInvalidException
 from logger import get_logger
 
 logger: logging.Logger = get_logger(__name__)
@@ -105,7 +105,13 @@ class Autotag:
         if template_path.exists():
             logger.debug("Searching for SDK version in template file.")
             with open(template_path, "r", encoding="utf-8") as file:
-                template: dict[str, Any] = json.load(file)
+                try:
+                    template: Any = json.load(file)
+                except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                    logger.error(f"Failed to read template file: {e}")
+                    raise TemplateJsonInvalidException()
+                if not isinstance(template, dict):
+                    raise TemplateJsonInvalidException()
                 metadata: dict[str, Any] = template.get("metadata", {})
                 version: str = metadata.get("sdk_version", "")
                 if version:

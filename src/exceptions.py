@@ -4,6 +4,7 @@ EC_ARG_INPUT_PDF_OUTPUT_PDF: int = 12
 EC_ARG_TEMPLATE_FILE_NOT_EXISTS: int = 13
 
 EC_PDFIX_ERROR: int = 20
+EC_TEMPLATE_JSON_INVALID: int = 21
 
 MESSAGE_ARG_GENERAL: str = "Failed to parse arguments. Please check the usage and try again."
 MESSAGE_ARG_TEMPLATE_JSON: str = "PDFix layout template was not provided."
@@ -11,6 +12,7 @@ MESSAGE_ARG_INPUT_PDF_OUTPUT_PDF: str = "Input and output file must be PDF docum
 MESSAGE_ARG_TEMPLATE_FILE_NOT_EXISTS: str = "PDFix layout template file does not exist."
 
 MESSAGE_PDFIX_ERROR: str = "PDFix SDK failed to tag the document. See the log for more details."
+MESSAGE_TEMPLATE_JSON_INVALID: str = "PDFix layout template is not a valid JSON file."
 
 
 class ExpectedException(BaseException):
@@ -47,3 +49,9 @@ class PdfixException(ExpectedException):
     def __init__(self) -> None:
         super().__init__(EC_PDFIX_ERROR)
         self._add_note(MESSAGE_PDFIX_ERROR)
+
+
+class TemplateJsonInvalidException(ExpectedException):
+    def __init__(self) -> None:
+        super().__init__(EC_TEMPLATE_JSON_INVALID)
+        self._add_note(MESSAGE_TEMPLATE_JSON_INVALID)
