@@ -13,6 +13,7 @@ from exceptions import (
     EC_ARG_GENERAL,
     MESSAGE_ARG_GENERAL,
     ArgumentInputPdfOutputPdfException,
+    ArgumentTemplateFileNotExistsException,
     ArgumentTemplateJsonException,
     ExpectedException,
 )
@@ -94,6 +95,10 @@ def autotagging_pdf(
     """
     if not template_path.lower().endswith(".json"):
         raise ArgumentTemplateJsonException()
+
+    template_file_path: Path = Path(template_path).resolve()
+    if not template_file_path.is_file():
+        raise ArgumentTemplateFileNotExistsException(template_file_path.as_posix())
 
     if input_path.lower().endswith(".pdf") and output_path.lower().endswith(".pdf"):
         autotag = Autotag(

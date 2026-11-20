@@ -1,12 +1,14 @@
 EC_ARG_GENERAL: int = 10
 EC_ARG_TEMPLATE_JSON: int = 11
 EC_ARG_INPUT_PDF_OUTPUT_PDF: int = 12
+EC_ARG_TEMPLATE_FILE_NOT_EXISTS: int = 13
 
 EC_PDFIX_ERROR: int = 20
 
 MESSAGE_ARG_GENERAL: str = "Failed to parse arguments. Please check the usage and try again."
 MESSAGE_ARG_TEMPLATE_JSON: str = "PDFix layout template was not provided."
 MESSAGE_ARG_INPUT_PDF_OUTPUT_PDF: str = "Input and output file must be PDF documents."
+MESSAGE_ARG_TEMPLATE_FILE_NOT_EXISTS: str = "PDFix layout template file does not exist."
 
 
 class ExpectedException(BaseException):
@@ -32,6 +34,11 @@ class ArgumentTemplateJsonException(ArgumentException):
 class ArgumentInputPdfOutputPdfException(ArgumentException):
     def __init__(self) -> None:
         super().__init__(MESSAGE_ARG_INPUT_PDF_OUTPUT_PDF, EC_ARG_INPUT_PDF_OUTPUT_PDF)
+
+
+class ArgumentTemplateFileNotExistsException(ArgumentException):
+    def __init__(self, path: str) -> None:
+        super().__init__(f"{MESSAGE_ARG_TEMPLATE_FILE_NOT_EXISTS} {path}", EC_ARG_TEMPLATE_FILE_NOT_EXISTS)
 
 
 class PdfixException(ExpectedException):
