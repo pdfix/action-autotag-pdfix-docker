@@ -11,6 +11,7 @@ import main  # noqa: E402
 from autotag import Autotag  # noqa: E402
 from constants import LATEST_SDK_VERSION  # noqa: E402
 from exceptions import (  # noqa: E402
+    EC_ARG_GENERAL,
     EC_ARG_TEMPLATE_FILE_NOT_EXISTS,
     EC_PDFIX_ERROR,
     EC_TEMPLATE_JSON_INVALID,
@@ -58,6 +59,15 @@ class TestAutotaggingPdf(unittest.TestCase):
         self.template_path.write_text("{}", encoding="utf-8")
         self.autotag()
         autotag_class.return_value.run.assert_called_once()
+
+
+class TestArguments(unittest.TestCase):
+    def test_tag_without_template_is_argument_error(self) -> None:
+        argv: list[str] = ["main.py", "tag", "-i", "input.pdf", "-o", "output.pdf"]
+        with mock.patch.object(sys, "argv", argv), mock.patch("sys.stderr"):
+            with self.assertRaises(SystemExit) as context:
+                main.main()
+        self.assertEqual(context.exception.code, EC_ARG_GENERAL)
 
 
 class TestAutotagRun(unittest.TestCase):

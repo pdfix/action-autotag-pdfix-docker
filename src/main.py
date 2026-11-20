@@ -46,7 +46,9 @@ def set_arguments(
             case "output":
                 parser.add_argument("--output", "-o", type=str, required=required_output, help=output_help)
             case "template":
-                parser.add_argument("--template", "-t", type=str, help="PDFix layout template JSON file.")
+                parser.add_argument(
+                    "--template", "-t", type=str, required=True, help="PDFix layout template JSON file."
+                )
 
 
 def run_config_subcommand(args) -> None:
