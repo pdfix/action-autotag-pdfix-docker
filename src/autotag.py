@@ -4,6 +4,8 @@ import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
+from tqdm import tqdm
+
 from constants import LATEST_SDK_VERSION
 from exceptions import PdfixException, TemplateJsonInvalidException
 from logger import get_logger
@@ -44,54 +46,62 @@ class Autotag:
         """
         Run PDFix SDK autotagging.
         """
-        sdk_folder: str = self._get_sdk_version()
-        sdk_executable: Path = Path(__file__).parent.parent.joinpath("sdk", sdk_folder, "pdfix_app")
+        with tqdm(total=100) as progress_bar:
+            progress_bar.set_description("Starting")
+            progress_bar.refresh()
 
-        command: list[str] = [sdk_executable.as_posix()]
+            sdk_folder: str = self._get_sdk_version()
+            sdk_executable: Path = Path(__file__).parent.parent.joinpath("sdk", sdk_folder, "pdfix_app")
 
-        # PDFix license name
-        if self.license_name:
-            command.append("--email")
-            command.append(self.license_name)
+            command: list[str] = [sdk_executable.as_posix()]
 
-        # PDFix license name
-        if self.license_key:
-            command.append("--key")
-            command.append(self.license_key)
+            # PDFix license name
+            if self.license_name:
+                command.append("--email")
+                command.append(self.license_name)
 
-        # Subcommand for autotagging
-        command.append("add-tags")
+            # PDFix license name
+            if self.license_key:
+                command.append("--key")
+                command.append(self.license_key)
 
-        # Input
-        command.append("-i")
-        input_path: Path = Path(self.input_path_str).resolve()
-        command.append(input_path.as_posix())
+            # Subcommand for autotagging
+            command.append("add-tags")
 
-        # Template
-        command.append("-c")
-        template_path: Path = Path(self.template_path_str).resolve()
-        command.append(template_path.as_posix())
+            # Input
+            command.append("-i")
+            input_path: Path = Path(self.input_path_str).resolve()
+            command.append(input_path.as_posix())
 
-        # Output
-        command.append("-o")
-        output_path: Path = Path(self.output_path_str).resolve()
-        command.append(output_path.as_posix())
+            # Template
+            command.append("-c")
+            template_path: Path = Path(self.template_path_str).resolve()
+            command.append(template_path.as_posix())
 
-        logger.info(f"Running:\n{' '.join(command)}")
+            # Output
+            command.append("-o")
+            output_path: Path = Path(self.output_path_str).resolve()
+            command.append(output_path.as_posix())
 
-        result: subprocess.CompletedProcess[str] = subprocess.run(
-            command,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+            logger.info(f"Running:\n{' '.join(command)}")
 
-        logger.debug(f"Return code: {result.returncode}\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
+            result: subprocess.CompletedProcess[str] = subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
 
-        if result.returncode != 0:
-            # PDFix SDK prints its error message to stdout
-            logger.error(f"PDFix SDK failed with return code {result.returncode}:\n{result.stdout}{result.stderr}")
-            raise PdfixException()
+            logger.debug(f"Return code: {result.returncode}\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
+
+            if result.returncode != 0:
+                # PDFix SDK prints its error message to stdout
+                logger.error(f"PDFix SDK failed with return code {result.returncode}:\n{result.stdout}{result.stderr}")
+                raise PdfixException()
+
+            progress_bar.n = 100
+            progress_bar.set_description("Done")
+            progress_bar.refresh()
 
     def _get_sdk_version(self) -> str:
         """

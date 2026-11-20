@@ -1,3 +1,6 @@
+import contextlib
+import io
+import re
 import subprocess
 import sys
 import tempfile
@@ -103,6 +106,22 @@ class TestAutotagRun(unittest.TestCase):
         run.return_value = finished_process(0)
         self.run_autotag()
         run.assert_called_once()
+
+    @mock.patch("autotag.subprocess.run")
+    def test_progress_matches_config_progress_regex(self, run: mock.MagicMock) -> None:
+        # Same pattern as "progress_regex" in config.json (Python named groups)
+        progress_regex: re.Pattern[str] = re.compile(r"^(?P<text>[^:]+):\s+(?P<progress>\d{1,3})%")
+        run.return_value = finished_process(0)
+        stderr: io.StringIO = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            self.run_autotag()
+        progress: list[tuple[str, str]] = []
+        for line in re.split(r"[\r\n]", stderr.getvalue()):
+            match: re.Match[str] | None = progress_regex.match(line)
+            if match:
+                progress.append((match.group("text"), match.group("progress")))
+        self.assertEqual(progress[0], ("Starting", "0"))
+        self.assertEqual(progress[-1], ("Done", "100"))
 
 
 class TestSdkVersion(unittest.TestCase):
