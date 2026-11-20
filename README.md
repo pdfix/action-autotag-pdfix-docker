@@ -1,6 +1,6 @@
 # Autotag (PDFix)
 
-A Docker image that automatically tags a PDF using a PDFix layout template JSON and the matching PDFix SDK version.
+A Docker image that automatically tags a PDF using a PDFix layout template JSON and the matching PDFix SDK version from 8.4.1 up; for other or missing versions the latest PDFix SDK version is used.
 
 ## Table of Contents
 
