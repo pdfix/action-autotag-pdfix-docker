@@ -87,6 +87,66 @@ def run_autotag_subcommand(args) -> None:
 # editor or by an AI layout action). Use it when results must match the template exactly as it was
 # tuned, even if your PDFix Desktop is newer. Runs locally in Docker; the first run downloads the
 # image and takes longer.
+# @KA:param input_pdf
+# @KA:desc PDF document to tag. It is only read, never changed. Password-protected PDFs are not
+# supported. Scanned pages without real text get no text tags; run an OCR action first.
+# @KA:problem "Input and output file must be PDF documents." (error 12)
+# @KA:solution Use files with the `.pdf` extension for both input and output.
+# @KA:param output_pdf
+# @KA:desc Where the tagged PDF is saved. The folder must already exist; an existing file with
+# the same name is overwritten.
+# @KA:param template_json
+# @KA:desc PDFix layout template (`.json`) that drives the tagging: what is a heading, paragraph,
+# table, list or artifact. Required, the file must exist. The template remembers the PDFix SDK
+# version it was made with, and the action uses that version (see **SDK version from the
+# template**).
+# @KA:problem "PDFix layout template was not provided." (error 11)
+# @KA:solution Select a template file with the `.json` extension in the **Template JSON** field.
+# @KA:problem "PDFix layout template file does not exist." (error 13)
+# @KA:solution The selected template file was not found. The message shows the path the action
+# looked for; select an existing template file.
+# @KA:logic PDFix license
+# @KA:desc PDFix Desktop passes your PDFix license to the action automatically. Without a
+# license the action runs in trial mode.
+# @KA:problem The output PDF has watermarks or randomly redacted content.
+# @KA:solution Trial mode is active. Activate your PDFix license in PDFix Desktop and run
+# the action again.
+# @KA:logic Existing tags are replaced
+# @KA:desc The whole document is tagged from scratch: the old structure tree and all old
+# tags and artifact marks on the pages are removed first, nothing of them is kept. The new
+# tree has one `Document` root, heading levels are kept in sequence (H1, H2, ...), and
+# content that is not real content (headers, footers, decorations, as the template
+# defines) is marked as artifact. Content inside Form XObjects is tagged too.
+# @KA:logic What is not done
+# @KA:desc The action only creates tags. It does not run OCR, add alternate text, set the
+# document title or language, or fix metadata, and it does not validate the result. Run
+# the matching actions afterwards and check the result with a PDF/UA validation.
+# @KA:logic Tagging failed
+# @KA:desc When PDFix SDK cannot open, tag or save the document, the action stops with
+# error 20 "PDFix SDK failed to tag the document." and no output PDF is created. The log
+# line below it, "PDFix SDK error ...", shows the SDK error code and message.
+# @KA:problem Error 20 and the log shows PDFix SDK error 5.
+# @KA:solution The input PDF does not exist or the output folder does not exist. Check
+# both paths.
+# @KA:problem Error 20 and the log shows PDFix SDK error 31 ("Failed to open document").
+# @KA:solution The input file is not a valid PDF. Open and save it again in a PDF editor
+# and run the action again.
+# @KA:problem Error 20 and the log shows PDFix SDK error 34.
+# @KA:solution The input PDF is password-protected. Remove the password and run the
+# action again.
+# @KA:logic SDK version from the template
+# @KA:desc The action contains the released PDFix SDK versions and tags the document with the
+# version written in the template (`sdk_version` in the template metadata). The same template
+# with the same SDK version gives the same tags as when the template was tuned, independent
+# of the PDFix Desktop version you use. If the template has no SDK version, or the version
+# is not available in the action, the newest SDK version in the action is used.
+# @KA:problem Tagging differs from what the template produced when it was created.
+# @KA:solution Look in the action log. "Unknown SDK version ... Using latest version ..."
+# means the template's SDK version is not available in the action and a newer one was used.
+# Update the action or recreate the template with a current PDFix version.
+# @KA:problem "PDFix layout template is not a valid JSON file." (error 21)
+# @KA:solution The template file is damaged or is not a layout template. The log shows where
+# reading failed. Export the template again or select another template file.
 def autotagging_pdf(
     license_name: Optional[str],
     license_key: Optional[str],
@@ -104,16 +164,6 @@ def autotagging_pdf(
         output_path (str): Path to PDF document.
         template_path (str): Path to template JSON file.
     """
-    # @KA:param template_json
-    # @KA:desc PDFix layout template (`.json`) that drives the tagging: what is a heading, paragraph,
-    # table, list or artifact. Required, the file must exist. The template remembers the PDFix SDK
-    # version it was made with, and the action uses that version (see **SDK version from the
-    # template**).
-    # @KA:problem "PDFix layout template was not provided." (error 11)
-    # @KA:solution Select a template file with the `.json` extension in the **Template JSON** field.
-    # @KA:problem "PDFix layout template file does not exist." (error 13)
-    # @KA:solution The selected template file was not found. The message shows the path the action
-    # looked for; select an existing template file.
     if not template_path.lower().endswith(".json"):
         raise ArgumentTemplateJsonException()
 
@@ -121,15 +171,6 @@ def autotagging_pdf(
     if not template_file_path.is_file():
         raise ArgumentTemplateFileNotExistsException(template_file_path.as_posix())
 
-    # @KA:param input_pdf
-    # @KA:desc PDF document to tag. It is only read, never changed. Password-protected PDFs are not
-    # supported. Scanned pages without real text get no text tags; run an OCR action first.
-    # @KA:problem "Input and output file must be PDF documents." (error 12)
-    # @KA:solution Use files with the `.pdf` extension for both input and output.
-    #
-    # @KA:param output_pdf
-    # @KA:desc Where the tagged PDF is saved. The folder must already exist; an existing file with
-    # the same name is overwritten.
     if input_path.lower().endswith(".pdf") and output_path.lower().endswith(".pdf"):
         autotag = Autotag(
             license_name,
