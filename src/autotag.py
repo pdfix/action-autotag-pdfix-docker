@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -11,6 +12,23 @@ from exceptions import PdfixException, TemplateJsonInvalidException
 from logger import get_logger
 
 logger: logging.Logger = get_logger(__name__)
+
+
+def format_sdk_error(return_code: int, output: str) -> str:
+    """
+    Build one log line from the PDFix SDK CLI return code and its output.
+
+    Args:
+        return_code (int): Return code of PDFix SDK CLI.
+        output (str): Text the CLI printed (it prints errors as "Error:<code> <text>").
+
+    Returns:
+        Text like "PDFix SDK error 31: Failed to open document."
+    """
+    # Older SDK versions print also a line like "Error: 31, open_doc_from_stream, 423"
+    messages: list[str] = re.findall(r"^Error:\s*\d+\s+([^,\s].*?)\s*$", output, re.MULTILINE)
+    text: str = messages[-1] if messages else " ".join(output.split())
+    return f"PDFix SDK error {return_code}: {text}" if text else f"PDFix SDK error {return_code}"
 
 
 class Autotag:
@@ -113,21 +131,18 @@ class Autotag:
             # @KA:logic Tagging failed
             # @KA:desc When PDFix SDK cannot open, tag or save the document, the action stops with
             # error 20 "PDFix SDK failed to tag the document." and no output PDF is created. The log
-            # line above it, "PDFix SDK failed with return code ...", shows the code and the SDK
-            # message.
-            # @KA:problem Error 20 and the log shows return code 5.
+            # line below it, "PDFix SDK error ...", shows the SDK error code and message.
+            # @KA:problem Error 20 and the log shows PDFix SDK error 5.
             # @KA:solution The input PDF does not exist or the output folder does not exist. Check
             # both paths.
-            # @KA:problem Error 20 and the log shows return code 31 ("Failed to open the document").
+            # @KA:problem Error 20 and the log shows PDFix SDK error 31 ("Failed to open document").
             # @KA:solution The input file is not a valid PDF. Open and save it again in a PDF editor
             # and run the action again.
-            # @KA:problem Error 20 and the log shows return code 34.
+            # @KA:problem Error 20 and the log shows PDFix SDK error 34.
             # @KA:solution The input PDF is password-protected. Remove the password and run the
             # action again.
             if result.returncode != 0:
-                # PDFix SDK prints its error message to stdout
-                logger.error(f"PDFix SDK failed with return code {result.returncode}:\n{result.stdout}{result.stderr}")
-                raise PdfixException()
+                raise PdfixException(format_sdk_error(result.returncode, f"{result.stdout}\n{result.stderr}"))
 
             progress_bar.n = 100
             progress_bar.set_description("Done")

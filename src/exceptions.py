@@ -19,6 +19,8 @@ class ExpectedException(BaseException):
     def __init__(self, error_code: int) -> None:
         self.error_code: int = error_code
         self.message: str = ""
+        # Error text from PDFix SDK, logged on its own line after the message
+        self.sdk_error: str = ""
 
     def _add_note(self, note: str) -> None:
         self.message = note
@@ -46,9 +48,10 @@ class ArgumentTemplateFileNotExistsException(ArgumentException):
 
 
 class PdfixException(ExpectedException):
-    def __init__(self) -> None:
+    def __init__(self, sdk_error: str = "") -> None:
         super().__init__(EC_PDFIX_ERROR)
         self._add_note(MESSAGE_PDFIX_ERROR)
+        self.sdk_error = sdk_error
 
 
 class TemplateJsonInvalidException(ExpectedException):
