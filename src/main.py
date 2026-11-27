@@ -5,7 +5,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from autotag import Autotag
 from constants import CONFIG_FILE
@@ -22,6 +22,9 @@ from image_update import DockerImageContainerUpdateChecker
 from logger import get_logger
 
 logger: logging.Logger = get_logger("app_logger")
+
+# PDFix SDK command line of every version in the image: sdk/<version>/pdfix_app
+SDK_FOLDER: Path = Path(__file__).parent.parent.joinpath("sdk")
 
 
 def set_arguments(
@@ -147,6 +150,7 @@ def run_autotag_subcommand(args) -> None:
 # with the same SDK version gives the same tags as when the template was tuned, independent
 # of the PDFix Desktop version you use. If the template has no SDK version, or the version
 # is not available in the action, the newest SDK version in the action is used.
+# From the command line, `--versions` lists the SDK versions in the action.
 # @KA:problem Tagging differs from what the template produced when it was created.
 # @KA:solution Look in the action log. "Unknown SDK version ... Using latest version ..."
 # means the template's SDK version is not available in the action and a newer one was used.
@@ -194,9 +198,59 @@ def autotagging_pdf(
     autotag.run()
 
 
+def version_key(version: str) -> tuple:
+    """
+    Sort key of a PDFix SDK version folder name.
+
+    Args:
+        version (str): Version like "8.7.10" or "v8.7.10".
+
+    Returns:
+        Numbers of the version, so 8.7.10 comes after 8.7.9; names that are not numbers come last.
+    """
+    parts: list[str] = version.removeprefix("v").split(".")
+    if all(part.isdigit() for part in parts):
+        return (0, tuple(int(part) for part in parts))
+    return (1, tuple(parts))
+
+
+def get_sdk_versions() -> list[str]:
+    """
+    PDFix SDK versions in the image: folders in `sdk` that contain the PDFix SDK command line.
+
+    Returns:
+        Versions without the "v" prefix, oldest first.
+    """
+    if not SDK_FOLDER.is_dir():
+        return []
+    names: set[str] = {
+        folder.name.removeprefix("v") for folder in SDK_FOLDER.iterdir() if folder.joinpath("pdfix_app").is_file()
+    }
+    return sorted(names, key=version_key)
+
+
+class PrintSdkVersionsAction(argparse.Action):
+    """
+    Print the PDFix SDK versions in the image, one per line, and exit (like --help).
+    """
+
+    def __init__(self, option_strings: list[str], dest: str, **kwargs: Any) -> None:
+        super().__init__(option_strings, dest, nargs=0, default=argparse.SUPPRESS, **kwargs)
+
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Any, values: Any, option_string: Any = None) -> None:
+        for version in get_sdk_versions():
+            print(version)
+        parser.exit(0)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Autotag PDF file using PDFix SDK",
+    )
+    parser.add_argument(
+        "--versions",
+        action=PrintSdkVersionsAction,
+        help="Print the PDFix SDK versions in the image (one per line) and exit.",
     )
 
     subparsers = parser.add_subparsers(title="Commands", dest="command", required=True)

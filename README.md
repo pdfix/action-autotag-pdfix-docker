@@ -32,6 +32,8 @@ docker run --rm -v "$(pwd)":/data -w /data pdfix/autotag-pdfix:latest <command> 
 
 - `tag`: Tag a PDF using a PDFix layout template JSON
 
+Option without a command: `--versions` prints the PDFix SDK versions in the image (one per line, oldest first) and exits.
+
 ## Arguments
 
 ### `tag`
@@ -46,7 +48,7 @@ docker run --rm -v "$(pwd)":/data -w /data pdfix/autotag-pdfix:latest <command> 
 
 ## How it works
 
-- The PDF is tagged with PDFix SDK from the layout template, using the SDK version written in the template (`sdk_version` in its metadata); without it, or for an unknown version, the newest SDK in the image is used.
+- The PDF is tagged with PDFix SDK from the layout template, using the SDK version written in the template (`sdk_version` in its metadata); without it, or for an unknown version, the newest SDK in the image is used. `--versions` lists the versions in the image.
 - **`tag` replaces the structure:** existing tags, the structure tree and artifact marks are removed and the document is tagged again from the template.
 - Password-protected PDFs are not supported: the PDFix SDK command line in the image ignores the password, so remove it first (error 30).
 - **Checks before processing:** output extension (11) and folder (12), input (13), template (14, 15), then tagging.
