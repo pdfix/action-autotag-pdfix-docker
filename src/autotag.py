@@ -11,7 +11,7 @@ from constants import LATEST_SDK_VERSION
 from exceptions import PdfixException, TemplateJsonInvalidException
 from logger import get_logger
 
-logger: logging.Logger = get_logger(__name__)
+logger: logging.Logger = get_logger("app_logger")
 
 
 def format_sdk_error(return_code: int, output: str) -> str:
