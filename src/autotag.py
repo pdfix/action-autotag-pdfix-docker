@@ -7,8 +7,8 @@ from typing import Any, Optional
 
 from tqdm import tqdm
 
-from constants import LATEST_SDK_VERSION
-from exceptions import PdfixException, TemplateJsonInvalidException
+from constants import LATEST_SDK_VERSION, SDK_ERROR_INVALID_PASSWORD
+from exceptions import PdfixException, PdfPasswordException, TemplateJsonInvalidException
 from logger import get_logger
 
 logger: logging.Logger = get_logger("app_logger")
@@ -111,7 +111,10 @@ class Autotag:
             logger.debug(f"Return code: {result.returncode}\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
 
             if result.returncode != 0:
-                raise PdfixException(format_sdk_error(result.returncode, f"{result.stdout}\n{result.stderr}"))
+                sdk_error: str = format_sdk_error(result.returncode, f"{result.stdout}\n{result.stderr}")
+                if result.returncode == SDK_ERROR_INVALID_PASSWORD:
+                    raise PdfPasswordException(input_path.as_posix(), sdk_error)
+                raise PdfixException(sdk_error)
 
             progress_bar.n = 100
             progress_bar.set_description("Done")

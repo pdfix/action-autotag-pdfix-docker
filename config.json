@@ -43,11 +43,13 @@
             ],
             "errors": {
                 "10": "Failed to parse arguments. Please check the usage and try again.",
-                "11": "PDFix layout template was not provided.",
-                "12": "Input and output file must be PDF documents.",
-                "13": "PDFix layout template file does not exist.",
-                "20": "PDFix SDK failed to tag the document. See the log for more details.",
-                "21": "PDFix layout template is not a valid JSON file."
+                "11": "Output file must be PDF document.",
+                "12": "Output folder does not exist.",
+                "13": "Input file must be an existing PDF document.",
+                "14": "PDFix layout template must be an existing JSON file.",
+                "15": "PDFix layout template is not a valid JSON file.",
+                "20": "Failed to tag PDF document.",
+                "30": "PDF document is password-protected. Remove the password with another action first."
             },
             "progress_regex": "^(?<text>[^:]+):\\s+(?<progress>\\d{1,3})%"
         }

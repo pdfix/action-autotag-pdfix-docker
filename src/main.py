@@ -12,9 +12,10 @@ from constants import CONFIG_FILE
 from exceptions import (
     EC_ARG_GENERAL,
     MESSAGE_ARG_GENERAL,
-    ArgumentInputPdfOutputPdfException,
-    ArgumentTemplateFileNotExistsException,
-    ArgumentTemplateJsonException,
+    ArgumentInputNotPdfException,
+    ArgumentOutputFolderNotExistsException,
+    ArgumentOutputNotPdfException,
+    ArgumentTemplateNotJsonException,
     ExpectedException,
 )
 from image_update import DockerImageContainerUpdateChecker
@@ -88,23 +89,32 @@ def run_autotag_subcommand(args) -> None:
 # tuned, even if your PDFix Desktop is newer. Runs locally in Docker; the first run downloads the
 # image and takes longer.
 # @KA:param input_pdf
-# @KA:desc PDF document to tag. It is only read, never changed. Password-protected PDFs are not
-# supported. Scanned pages without real text get no text tags; run an OCR action first.
-# @KA:problem "Input and output file must be PDF documents." (error 12)
-# @KA:solution Use files with the `.pdf` extension for both input and output.
+# @KA:desc PDF document to tag. It is only read, never changed. Scanned pages without real text
+# get no text tags; run an OCR action first.
+# @KA:problem "Input file must be an existing PDF document." (error 13)
+# @KA:solution The file shown in the message was not found or does not have the `.pdf`
+# extension. Select an existing PDF file.
+# @KA:problem "PDF document is password-protected. Remove the password with another action first." (error 30)
+# @KA:solution The PDF needs a password to open, and this action cannot open it even with the
+# password (the PDFix SDK command line it uses ignores it). Remove the password in a PDF editor
+# and run the action again.
 # @KA:param output_pdf
-# @KA:desc Where the tagged PDF is saved. The folder must already exist; an existing file with
-# the same name is overwritten.
+# @KA:desc Where the tagged PDF is saved, a file with the `.pdf` extension. The folder must
+# already exist; an existing file with the same name is overwritten. Both are checked before
+# tagging.
+# @KA:problem "Output file must be PDF document." (error 11)
+# @KA:solution Select an output file with the `.pdf` extension.
+# @KA:problem "Output folder does not exist." (error 12)
+# @KA:solution Create the folder shown in the message or select another output file.
 # @KA:param template_json
 # @KA:desc PDFix layout template (`.json`) that drives the tagging: what is a heading, paragraph,
 # table, list or artifact. Required, the file must exist. The template remembers the PDFix SDK
 # version it was made with, and the action uses that version (see **SDK version from the
 # template**).
-# @KA:problem "PDFix layout template was not provided." (error 11)
-# @KA:solution Select a template file with the `.json` extension in the **Template JSON** field.
-# @KA:problem "PDFix layout template file does not exist." (error 13)
-# @KA:solution The selected template file was not found. The message shows the path the action
-# looked for; select an existing template file.
+# @KA:problem "PDFix layout template must be an existing JSON file." (error 14)
+# @KA:solution The template file was not selected, was not found or does not have the `.json`
+# extension. The message shows the path the action looked for; select an existing template
+# file in the **Template JSON** field.
 # @KA:logic PDFix license
 # @KA:desc PDFix Desktop passes your PDFix license to the action automatically. Without a
 # license the action runs in trial mode.
@@ -123,11 +133,8 @@ def run_autotag_subcommand(args) -> None:
 # the matching actions afterwards and check the result with a PDF/UA validation.
 # @KA:logic Tagging failed
 # @KA:desc When PDFix SDK cannot open, tag or save the document, the action stops with
-# error 20 "PDFix SDK failed to tag the document." and no output PDF is created. The log
-# line below it, "PDFix SDK error ...", shows the SDK error code and message.
-# @KA:problem Error 20 and the log shows PDFix SDK error 5.
-# @KA:solution The input PDF does not exist or the output folder does not exist. Check
-# both paths.
+# error 20 "Failed to tag PDF document." and no output PDF is created. The log line below
+# it, "PDFix SDK error ...", shows the SDK error code and message.
 # @KA:problem Error 20 and the log shows PDFix SDK error 31 ("Failed to open document").
 # @KA:solution The input file is not a valid PDF. Open and save it again in a PDF editor
 # and run the action again.
@@ -144,7 +151,7 @@ def run_autotag_subcommand(args) -> None:
 # @KA:solution Look in the action log. "Unknown SDK version ... Using latest version ..."
 # means the template's SDK version is not available in the action and a newer one was used.
 # Update the action or recreate the template with a current PDFix version.
-# @KA:problem "PDFix layout template is not a valid JSON file." (error 21)
+# @KA:problem "PDFix layout template is not a valid JSON file." (error 15)
 # @KA:solution The template file is damaged or is not a layout template. The log shows where
 # reading failed. Export the template again or select another template file.
 def autotagging_pdf(
@@ -164,24 +171,27 @@ def autotagging_pdf(
         output_path (str): Path to PDF document.
         template_path (str): Path to template JSON file.
     """
-    if not template_path.lower().endswith(".json"):
-        raise ArgumentTemplateJsonException()
-
+    # Check order as in other actions: output extension, output folder, input, template, then tagging
+    if Path(output_path).suffix.lower() != ".pdf":
+        raise ArgumentOutputNotPdfException()
+    output_folder: Path = Path(output_path).resolve().parent
+    if not output_folder.is_dir():
+        raise ArgumentOutputFolderNotExistsException(output_folder.as_posix())
+    input_file_path: Path = Path(input_path).resolve()
+    if input_file_path.suffix.lower() != ".pdf" or not input_file_path.is_file():
+        raise ArgumentInputNotPdfException(input_file_path.as_posix())
     template_file_path: Path = Path(template_path).resolve()
-    if not template_file_path.is_file():
-        raise ArgumentTemplateFileNotExistsException(template_file_path.as_posix())
+    if template_file_path.suffix.lower() != ".json" or not template_file_path.is_file():
+        raise ArgumentTemplateNotJsonException(template_file_path.as_posix())
 
-    if input_path.lower().endswith(".pdf") and output_path.lower().endswith(".pdf"):
-        autotag = Autotag(
-            license_name,
-            license_key,
-            input_path,
-            output_path,
-            template_path,
-        )
-        autotag.run()
-    else:
-        raise ArgumentInputPdfOutputPdfException()
+    autotag = Autotag(
+        license_name,
+        license_key,
+        input_path,
+        output_path,
+        template_path,
+    )
+    autotag.run()
 
 
 def main() -> None:
