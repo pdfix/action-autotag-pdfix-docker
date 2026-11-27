@@ -9,6 +9,8 @@ A Docker image that automatically tags a PDF using a PDFix layout template JSON 
   - [Usage](#usage)
   - [Commands](#commands)
   - [Arguments](#arguments)
+  - [How it works](#how-it-works)
+  - [Exit codes](#exit-codes)
   - [Examples](#examples)
   - [Notes](#notes)
   - [Help \& support](#help--support)
@@ -41,6 +43,28 @@ docker run --rm -v "$(pwd)":/data -w /data pdfix/autotag-pdfix:latest <command> 
 | `--template`, `-t` | yes | Path to an existing `.json` layout template file | PDFix layout template JSON |
 | `--name` | no | String (PDFix account license name) | PDFix license name |
 | `--key` | no | String (PDFix account license key) | PDFix license key |
+
+## How it works
+
+- The PDF is tagged with PDFix SDK from the layout template, using the SDK version written in the template (`sdk_version` in its metadata); without it, or for an unknown version, the newest SDK in the image is used.
+- **`tag` replaces the structure:** existing tags, the structure tree and artifact marks are removed and the document is tagged again from the template.
+- Password-protected PDFs are not supported: the PDFix SDK command line in the image ignores the password, so remove it first (error 30).
+- **Checks before processing:** output extension (11) and folder (12), input (13), template (14, 15), then tagging.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Success |
+| 1 | Unexpected error (`Failed to run the program:` + traceback) |
+| 10 | Failed to parse arguments. Please check the usage and try again |
+| 11 | Output file must be PDF document |
+| 12 | Output folder does not exist |
+| 13 | Input file must be an existing PDF document |
+| 14 | PDFix layout template must be an existing JSON file |
+| 15 | PDFix layout template is not a valid JSON file |
+| 20 | Failed to tag PDF document |
+| 30 | PDF document is password-protected. Remove the password with another action first |
 
 ## Examples
 
